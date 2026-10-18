@@ -76,23 +76,28 @@ function readJson(req) {
   return new Promise((resolve, reject) => {
     let body = "";
     let size = 0;
+    let tooLarge = false;
     req.on("data", (chunk) => {
+      if (tooLarge) return;
       size += chunk.length;
       if (size > MAX_BODY_BYTES) {
+        tooLarge = true;
         reject(Object.assign(new Error("Request too large"), { statusCode: 413 }));
-        req.destroy();
         return;
       }
       body += chunk.toString("utf8");
     });
     req.on("end", () => {
+      if (tooLarge) return;
       try {
         resolve(JSON.parse(body || "{}"));
       } catch {
         reject(Object.assign(new Error("Invalid JSON"), { statusCode: 400 }));
       }
     });
-    req.on("error", reject);
+    req.on("error", (error) => {
+      if (!tooLarge) reject(error);
+    });
   });
 }
 

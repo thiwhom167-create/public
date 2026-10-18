@@ -26,8 +26,8 @@
 <div class="field"><label for="features">จุดเด่นที่เป็นข้อเท็จจริง</label><textarea id="features" name="features" maxlength="300" placeholder="เช่น หอมช็อกโกแลต คั่วใหม่ทุกสัปดาห์"></textarea></div>
 <div class="field"><label for="audience">ลูกค้าหลัก</label><input id="audience" name="audience" maxlength="120" placeholder="เช่น คนชอบชงกาแฟที่บ้าน"></div>
 <div class="fieldrow"><div class="field"><label for="tone">โทนข้อความ</label><select id="tone" name="tone"><option>เป็นกันเอง</option><option>น่าเชื่อถือ</option><option>สนุก สดใส</option><option>พรีเมียม</option><option>อบอุ่น</option></select></div><div class="field"><label for="goal">เป้าหมาย</label><select id="goal" name="goal"><option>เพิ่มยอดขาย</option><option>สร้างการรับรู้</option><option>โปรโมชัน</option><option>เพิ่มการมีส่วนร่วม</option></select></div></div>
-<button class="btn primary full" type="submit">✦ สร้างโพสต์ตัวอย่าง</button><p class="safety">อย่าใส่รหัสผ่าน ข้อมูลลูกค้า หรือข้อมูลที่เป็นความลับ</p></form>
-<section class="panel resultbox" aria-live="polite"><div class="resulthead"><div><h3>ข้อความของคุณ</h3><div class="muted" style="margin:3px 0 0">แก้ไขข้อความก่อนเผยแพร่เสมอ</div></div><span class="badge">ตัวอย่างจำลอง</span></div><div id="empty" class="empty"><div><div class="paper">✍️</div><b>ข้อความจะปรากฏตรงนี้</b><p>กรอกข้อมูลสินค้าแล้วกด “สร้างโพสต์ตัวอย่าง”</p></div></div><textarea id="output" class="resultarea hidden" aria-label="ข้อความโพสต์ที่สร้าง" spellcheck="false"></textarea><div class="resultbuttons"><button id="copy" type="button" class="btn primary hidden">คัดลอกข้อความ</button><button id="again" type="button" class="btn secondary hidden">สร้างใหม่อีกครั้ง</button></div><p class="safety">หมายเหตุ: เป็นแม่แบบในเบราว์เซอร์ ไม่ได้เรียก AI API จริง</p></section>
+<button id="generateBtn" class="btn primary full" type="submit">✦ สร้างโพสต์ด้วย AI จริง</button><p class="safety">อย่าใส่รหัสผ่าน ข้อมูลลูกค้า หรือข้อมูลที่เป็นความลับ</p></form>
+<section class="panel resultbox" aria-live="polite"><div class="resulthead"><div><h3>ข้อความของคุณ</h3><div class="muted" style="margin:3px 0 0">แก้ไขข้อความก่อนเผยแพร่เสมอ</div></div><span class="badge" id="aiStatus">AI API ยังไม่ตั้งค่า</span></div><div id="empty" class="empty"><div><div class="paper">✍️</div><b>ข้อความจะปรากฏตรงนี้</b><p>กรอกข้อมูลสินค้าแล้วกด “สร้างโพสต์ตัวอย่าง”</p></div></div><textarea id="output" class="resultarea hidden" aria-label="ข้อความโพสต์ที่สร้าง" spellcheck="false"></textarea><div class="resultbuttons"><button id="copy" type="button" class="btn primary hidden">คัดลอกข้อความ</button><button id="again" type="button" class="btn secondary hidden">สร้างใหม่อีกครั้ง</button></div><p id="apiNote" class="safety">ระบบจะเรียก AI ผ่านเซิร์ฟเวอร์ ไม่เปิดเผย API key ในหน้าเว็บ หากยังไม่ตั้งค่าคีย์ ระบบจะแจ้งเตือนแทนการสร้างข้อความจำลอง</p></section>
 </div></div></section>
 <section class="how wrap" id="how"><div class="heading"><div class="eyebrow">ทำง่าย 3 ขั้นตอน</div><h2>ไม่ต้องเป็นนักเขียนก็เริ่มได้</h2><p>ใช้เว็บไซต์เป็นจุดเริ่มต้น แล้วปรับภาษาให้ตรงกับลูกค้าของร้าน</p></div><div class="steps"><article class="step"><span class="stepnum">01</span><h3>กรอกข้อมูลสินค้า</h3><p>ใส่ชื่อ ราคา จุดเด่น และกลุ่มลูกค้าที่ต้องการสื่อสาร</p></article><article class="step"><span class="stepnum">02</span><h3>เลือกรูปแบบโพสต์</h3><p>เลือกแพลตฟอร์ม โทนเสียง และเป้าหมายของข้อความ</p></article><article class="step"><span class="stepnum">03</span><h3>คัดลอกแล้วตรวจทาน</h3><p>ตรวจราคา รายละเอียด และคำกล่าวอ้างก่อนเผยแพร่ทุกครั้ง</p></article></div></section>
 <section class="pricing" id="pricing"><div class="wrap pricegrid"><div><div class="eyebrow">เริ่มเล็ก ทดลองจริง</div><h2>ลองฟรีก่อน<br>แล้วค่อยจ่ายเมื่อชอบงาน</h2><p>แนวทางบริการเริ่มต้นคือทำตัวอย่าง 3 โพสต์ให้ฟรี หากร้านชอบผลงาน ค่อยเสนอแพ็กทดลอง 10 โพสต์ในราคา 199 บาท บริการรายเดือน 599 บาทเป็นข้อเสนอสำหรับทดสอบตลาด ยังไม่มีระบบสมัครสมาชิกอัตโนมัติ</p></div><div class="pricecard"><div style="font-size:11px;color:#b9afff">แพ็กทดลอง · บริการจัดทำโดยผู้ดูแล</div><div class="price">199 <small>บาท / 10 โพสต์</small></div><p class="disclaimer">ราคาทดลองตลาด · ยังไม่มี checkout หรือการเก็บเงินบนเว็บนี้</p><ul><li>ร่างแคปชันตามข้อมูลสินค้า</li><li>ปรับโทนให้เหมาะกับร้าน</li><li>คำชวนซื้อและแฮชแท็ก</li><li>ตกลงขอบเขตและวันส่งก่อนเริ่ม</li></ul><a class="btn primary full" href="#studio">ลองเครื่องมือฟรี →</a></div></div></section>
@@ -55,7 +55,35 @@ const tone={'เป็นกันเอง':'แวะมาคุยกัน�
 return body+'\n\n'+(tone[d.tone]||'')+'\n\n#'+hash+' #ร้านค้าออนไลน์ #ของดีบอกต่อ'+'\n\n---\nร่างจากแม่แบบของโพสต์ปัง AI · '+d.platform+' · เป้าหมาย: '+d.goal+' · ยังไม่ได้สร้างด้วย AI จริง';
 }
 let last='';
-function generate(){if(!form.reportValidity())return;const d=data();last=[0,1,2].map((v)=>draft(d,v)).join('\n\n'+'—'.repeat(18)+'\n\n');output.value=last;empty.classList.add('hidden');output.classList.remove('hidden');copy.classList.remove('hidden');again.classList.remove('hidden');}
+const API_BASE='https://postpang-ai-api.onrender.com';
+const statusEl=document.getElementById('aiStatus');
+const generateBtn=document.getElementById('generateBtn');
+function showResult(text){last=text;output.value=text;empty.classList.add('hidden');output.classList.remove('hidden');copy.classList.remove('hidden');again.classList.remove('hidden');}
+function errorResult(text){showResult(text);statusEl.textContent='ต้องตรวจสอบ';}
+async function generate(){
+ if(!form.reportValidity())return;
+ const d=data();
+ generateBtn.disabled=true;again.disabled=true;generateBtn.textContent='กำลังเรียก AI…';statusEl.textContent='กำลังเชื่อมต่อ';
+ const controller=new AbortController(); const timeout=setTimeout(()=>controller.abort(),45000);
+ try {
+  const response=await fetch(API_BASE+'/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d),signal:controller.signal});
+  const json=await response.json().catch(()=>({}));
+  if(!response.ok){
+   if(response.status===503) throw new Error('เซิร์ฟเวอร์ยังไม่ได้ตั้งค่า OPENAI_API_KEY กรุณาเปิด Render Dashboard ของบริการ postpang-ai-api แล้วเพิ่มคีย์ใน Environment');
+   if(response.status===429) throw new Error('ใช้คำขอครบโควตาชั่วคราวแล้ว กรุณารอประมาณ 10 นาทีแล้วลองใหม่');
+   if(response.status===403) throw new Error('คำขอนี้ไม่ได้มาจากเว็บไซต์ที่อนุญาต');
+   throw new Error(json.error||'ระบบ AI ตอบกลับไม่สำเร็จ กรุณาลองใหม่ภายหลัง');
+  }
+  if(typeof json.text!=='string'||!json.text.trim())throw new Error('AI ไม่ได้ส่งข้อความกลับมา กรุณาลองอีกครั้ง');
+  showResult(json.text);statusEl.textContent='เชื่อมต่อ AI แล้ว';notice('สร้างข้อความด้วย AI สำเร็จ');
+ } catch(e){
+  const message=e.name==='AbortError'?'AI ใช้เวลานานเกินไป กรุณาลองใหม่':e.message||'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
+  errorResult('ยังสร้างโพสต์ไม่ได้\n\n'+message+'\n\nข้อควรทราบ: จะไม่มีการสร้างข้อความจำลองแทน เพื่อให้เห็นชัดว่า AI จริงทำงานแล้วหรือยัง');
+  notice('ยังเชื่อมต่อ AI ไม่สำเร็จ');
+ } finally {
+  clearTimeout(timeout);generateBtn.disabled=false;again.disabled=false;generateBtn.textContent='✦ สร้างโพสต์ด้วย AI จริง';
+ }
+}
 async function clipboard(text){try{await navigator.clipboard.writeText(text);notice('คัดลอกข้อความแล้ว')}catch(e){output.focus();output.select();notice('เลือกข้อความไว้แล้ว กดคัดลอกได้เลย')}}
 function notice(t){toast.textContent=t;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2200)}
 form.addEventListener('submit',function(e){e.preventDefault();generate()});again.addEventListener('click',generate);copy.addEventListener('click',()=>clipboard(output.value));

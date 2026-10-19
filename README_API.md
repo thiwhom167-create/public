@@ -1,6 +1,6 @@
-# PostPang AI API (Thai) — free-tier Groq setup
+# PostPang AI API (Thai) — free AI provider
 
-API server for the PostPang AI static website. Default provider is Groq's free plan (subject to account verification, supported models, and current rate limits).
+This API calls the Pollinations Free API Classic text endpoint, which does not require an API key according to the provider's currently published privacy information. Availability is not guaranteed: the legacy/free endpoint may rate-limit or reject requests, and free providers can change behavior.
 
 ## Deploy on Render
 
@@ -11,25 +11,23 @@ API server for the PostPang AI static website. Default provider is Groq's free p
 - Plan: Free for initial testing (cold starts can occur)
 - Region: Singapore
 - Environment variables:
-  - `GROQ_API_KEY`: create a free GroqCloud API key and add it privately in the Render service Environment page. Never commit it to GitHub.
-  - `GROQ_MODEL`: optional; default `openai/gpt-oss-20b`.
-  - `SITE_ORIGIN`: optional; default `https://postpang-ai-th.onrender.com`.
+  - `SITE_ORIGIN`: optional; defaults to `https://postpang-ai-th.onrender.com`.
+- No `OPENAI_API_KEY`, `GROQ_API_KEY`, or provider API key is required by this version.
 
 ## Endpoints
 
-- `GET /api/health`: reports whether a Groq key is configured (never reveals it).
-- `POST /api/generate`: accepts product, price, features, audience, tone, goal, and platform, returning generated Thai captions.
+- `GET /api/health`: reports the provider self-test result from the last process start.
+- `POST /api/generate`: sends the user's product information to the free model and returns generated Thai captions.
 
-## Security included
+## Privacy and reliability
 
-- Groq key is read only from `process.env.GROQ_API_KEY`.
-- Exact website-origin CORS check and POST origin validation.
-- Request-body size limit, field length limits, and an initial in-memory per-IP rate limit.
-- Bounded model output and request timeout, generic upstream errors without returning the key or raw upstream body.
-- `.env` is excluded from Git via `.gitignore`.
-
-Rate limiting is an initial safeguard, not a complete bot defense. Free Plan requests should be rejected with a rate-limit error rather than charged when the free quota is exhausted, according to Groq's current Free Plan information. Check current limits in the dashboard; don't upgrade to a paid tier for this project unless you explicitly choose to. Free providers can change model availability or quotas.
+- The server sends product details to the third-party Pollinations Free API Classic endpoint; don't enter confidential or personal customer information.
+- Requests ask the provider to mark outputs private (`private: true`), but this is not a guarantee of zero logging by the provider.
+- A small fixed self-test runs at server startup and its result is logged. It does not use user data or an API key.
+- If the free provider fails, the frontend clearly marks the fallback output as a template rather than claiming it was produced by a model.
+- Exact website-origin CORS check, request-size and field-length limits, 6 requests per IP per 10 minutes, model request timeout, and generic upstream errors are enabled.
+- The in-memory rate limit is an initial safeguard only. Since the site uses a no-key public provider, don't advertise it for high-volume production; providers may impose limits or become unavailable.
 
 ## Local testing
 
-Set `GROQ_API_KEY` in the local process environment (do not paste it into chat or commit it), then run `npm start`.
+Run `npm start`. No provider key is needed.

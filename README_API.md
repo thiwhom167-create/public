@@ -1,6 +1,6 @@
-# PostPang AI API (Thai)
+# PostPang AI API (Thai) — free-tier Groq setup
 
-API server for the PostPang AI static website.
+API server for the PostPang AI static website. Default provider is Groq's free plan (subject to account verification, supported models, and current rate limits).
 
 ## Deploy on Render
 
@@ -11,30 +11,25 @@ API server for the PostPang AI static website.
 - Plan: Free for initial testing (cold starts can occur)
 - Region: Singapore
 - Environment variables:
-  - `OPENAI_API_KEY`: add privately in the Render service Environment page; never commit this value to GitHub.
-  - `OPENAI_MODEL`: optional; default `gpt-5.4-mini`.
+  - `GROQ_API_KEY`: create a free GroqCloud API key and add it privately in the Render service Environment page. Never commit it to GitHub.
+  - `GROQ_MODEL`: optional; default `openai/gpt-oss-20b`.
   - `SITE_ORIGIN`: optional; default `https://postpang-ai-th.onrender.com`.
 
 ## Endpoints
 
-- `GET /api/health`: reports whether a key is configured (never reveals it).
-- `POST /api/generate`: accepts product, price, features, audience, tone, goal, platform and returns three generated Thai captions.
+- `GET /api/health`: reports whether a Groq key is configured (never reveals it).
+- `POST /api/generate`: accepts product, price, features, audience, tone, goal, and platform, returning generated Thai captions.
 
 ## Security included
 
-- API key is read only from `process.env.OPENAI_API_KEY`.
+- Groq key is read only from `process.env.GROQ_API_KEY`.
 - Exact website-origin CORS check and POST origin validation.
-- Request-body size limit, field length limits, and a basic in-memory per-IP rate limit.
-- Bounded model output and timeout, generic upstream errors without returning key or raw upstream body.
-- `store: false` on the Responses API request.
+- Request-body size limit, field length limits, and an initial in-memory per-IP rate limit.
+- Bounded model output and request timeout, generic upstream errors without returning the key or raw upstream body.
 - `.env` is excluded from Git via `.gitignore`.
 
-Rate limiting is an initial safeguard, not complete bot protection. Before advertising the public site widely, add Turnstile or another anti-abuse check and set a low usage budget/alerts in the OpenAI Platform dashboard. API usage is billed separately from a ChatGPT subscription and can cost money.
+Rate limiting is an initial safeguard, not a complete bot defense. Free Plan requests should be rejected with a rate-limit error rather than charged when the free quota is exhausted, according to Groq's current Free Plan information. Check current limits in the dashboard; don't upgrade to a paid tier for this project unless you explicitly choose to. Free providers can change model availability or quotas.
 
 ## Local testing
 
-Set `OPENAI_API_KEY` in your local environment (do not paste it in chat or commit it), then run:
-
-```sh
-npm start
-```
+Set `GROQ_API_KEY` in the local process environment (do not paste it into chat or commit it), then run `npm start`.

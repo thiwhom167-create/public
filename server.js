@@ -1,8 +1,8 @@
 const http = require("node:http");
 
 const PORT = Number(process.env.PORT || 10000);
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.4-mini";
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
 const SITE_ORIGIN = process.env.SITE_ORIGIN || "https://postpang-ai-th.onrender.com";
 const LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const LIMIT_REQUESTS = 6;
@@ -123,7 +123,7 @@ async function generatePost(input) {
   if (product.length < 1) {
     return { status: 400, body: { error: "กรุณาระบุชื่อสินค้า" } };
   }
-  if (!OPENAI_API_KEY) {
+  if (!GROQ_API_KEY) {
     return { status: 503, body: { error: "AI API is not configured yet" } };
   }
 
@@ -153,34 +153,35 @@ async function generatePost(input) {
 
   let response;
   try {
-    response = await fetch("https://api.openai.com/v1/responses", {
+    response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": "Bearer " + OPENAI_API_KEY,
+        "Authorization": "Bearer " + GROQ_API_KEY,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: OPENAI_MODEL,
-        instructions,
-        input: inputText,
-        max_output_tokens: 1200,
-        reasoning: { effort: "low" },
-        store: false,
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: instructions },
+          { role: "user", content: inputText },
+        ],
+        max_tokens: 1100,
+        temperature: 0.7,
       }),
       signal: AbortSignal.timeout(40000),
     });
   } catch (error) {
-    console.error("OpenAI network error:", error.name || "network_error");
+    console.error("Groq network error:", error.name || "network_error");
     return { status: 502, body: { error: "เชื่อมต่อบริการ AI ไม่สำเร็จ กรุณาลองใหม่ภายหลัง" } };
   }
 
   if (!response.ok) {
-    console.error("OpenAI API returned status:", response.status);
+    console.error("Groq API returned status:", response.status);
     if (response.status === 401 || response.status === 403) {
-      return { status: 502, body: { error: "API key ใช้ไม่ได้หรือไม่มีสิทธิ์เรียกโมเดล กรุณาตรวจสอบคีย์ใน Render" } };
+      return { status: 502, body: { error: "GROQ_API_KEY ใช้ไม่ได้หรือไม่มีสิทธิ์ กรุณาตรวจสอบคีย์ใน Render" } };
     }
     if (response.status === 429) {
-      return { status: 429, body: { error: "คำขอถูกจำกัดหรือเครดิต API ไม่เพียงพอ กรุณาตรวจสอบ Usage/Billing" } };
+      return { status: 429, body: { error: "ถึงขีดจำกัดโควตาฟรีชั่วคราวแล้ว กรุณารอสักครู่หรือตรวจสอบ Free Plan limits" } };
     }
     return { status: 502, body: { error: "ผู้ให้บริการ AI ตอบกลับผิดพลาด กรุณาลองใหม่ภายหลัง" } };
   }
@@ -192,12 +193,12 @@ async function generatePost(input) {
     return { status: 502, body: { error: "ได้รับคำตอบจาก AI ในรูปแบบที่ไม่ถูกต้อง" } };
   }
 
-  const text = extractOutputText(data);
-  if (!text) {
-    console.error("OpenAI response contained no output text");
+  const text = data?.choices?.[0]?.message?.content;
+  if (typeof text !== "string" || !text.trim()) {
+    console.error("Groq response contained no output text");
     return { status: 502, body: { error: "AI ยังไม่ได้ส่งข้อความกลับมา กรุณาลองใหม่" } };
   }
-  return { status: 200, body: { text, model: OPENAI_MODEL } };
+  return { status: 200, body: { text: text.trim(), model: GROQ_MODEL } };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -207,8 +208,9 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url.pathname === "/api/health") {
     return reply(res, 200, {
       ok: true,
-      configured: Boolean(OPENAI_API_KEY),
-      model: OPENAI_MODEL,
+      configured: Boolean(GROQ_API_KEY),
+      provider: "Groq",
+      model: GROQ_MODEL,
     });
   }
   if (req.method !== "POST" || url.pathname !== "/api/generate") {

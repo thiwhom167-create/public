@@ -109,9 +109,15 @@ function sendWorker(payload){
 async function generate(){
  if(!form.reportValidity())return;
  const d=data();
- const supportsGpu=typeof navigator!=='undefined'&&'gpu' in navigator&&!!navigator.gpu;
+ let supportsGpu=false;
+ try{
+  if(typeof navigator!=='undefined'&&navigator.gpu&&typeof navigator.gpu.requestAdapter==='function'){
+   const adapter=await navigator.gpu.requestAdapter();
+   supportsGpu=!!adapter&&adapter.features&&adapter.features.has('shader-f16');
+  }
+ }catch{supportsGpu=false;}
  if(!supportsGpu){
-  const proceed=window.confirm('เบราว์เซอร์นี้ไม่พบ WebGPU จึงต้องใช้ CPU และดาวน์โหลดโมเดลขนาดประมาณ 786MB ในครั้งแรก อาจใช้เวลานานและกิน RAM แนะนำให้ใช้ Wi‑Fi และปิดแอปอื่นก่อน\n\nดำเนินการต่อหรือไม่?');
+  const proceed=window.confirm('มือถือ/เบราว์เซอร์นี้ใช้ GPU แบบที่โมเดลต้องการไม่ได้ จึงต้องใช้ CPU และดาวน์โหลดโมเดลขนาดประมาณ 786MB ในครั้งแรก อาจใช้เวลานานและกิน RAM แนะนำให้ใช้ Wi‑Fi และปิดแอปอื่นก่อน\n\nดำเนินการต่อหรือไม่?');
   if(!proceed)return;
  }
  generateBtn.disabled=true;

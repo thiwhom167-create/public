@@ -1,8 +1,9 @@
 const http = require("node:http");
 
 const PORT = Number(process.env.PORT || 10000);
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
+const FREE_AI_MODEL = "openai";
+const FREE_AI_URL = "https://text.pollinations.ai/openai";
+let freeAiReady = null;
 const SITE_ORIGIN = process.env.SITE_ORIGIN || "https://postpang-ai-th.onrender.com";
 const LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const LIMIT_REQUESTS = 6;
@@ -111,6 +112,59 @@ function extractOutputText(data) {
     .trim();
 }
 
+async function callFreeAi(messages, maxTokens = 900) {
+  const response = await fetch(FREE_AI_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "Origin": SITE_ORIGIN,
+      "Referer": SITE_ORIGIN + "/",
+    },
+    body: JSON.stringify({
+      model: FREE_AI_MODEL,
+      messages,
+      max_tokens: maxTokens,
+      temperature: 0.7,
+      private: true,
+      stream: false,
+    }),
+    signal: AbortSignal.timeout(40000),
+  });
+
+  const raw = await response.text();
+  let data = null;
+  try { data = JSON.parse(raw); } catch {}
+
+  if (!response.ok) {
+    console.error("Free AI provider returned status:", response.status);
+    const error = new Error("ผู้ให้บริการ AI ฟรีตอบกลับ HTTP " + response.status);
+    error.statusCode = response.status;
+    throw error;
+  }
+
+  const result = data?.choices?.[0]?.message?.content;
+  const text = typeof result === "string" ? result.trim() : (raw || "").trim();
+  if (!text || text.length < 3) {
+    throw new Error("ผู้ให้บริการ AI ฟรีไม่ได้ส่งข้อความ");
+  }
+  return text;
+}
+
+async function selfTestFreeAi() {
+  try {
+    const text = await callFreeAi([
+      { role: "system", content: "Reply with the exact word OK and nothing else." },
+      { role: "user", content: "Reply OK." },
+    ], 8);
+    freeAiReady = true;
+    console.log("FREE_AI_SELF_TEST=PASS", "provider=Pollinations Classic", "chars=" + text.length);
+  } catch (error) {
+    freeAiReady = false;
+    console.error("FREE_AI_SELF_TEST=FAIL", error.statusCode || error.name || "unknown_error");
+  }
+}
+
 async function generatePost(input) {
   const product = cleanString(input.product, 100);
   const price = cleanString(input.price, 80);
@@ -122,9 +176,6 @@ async function generatePost(input) {
 
   if (product.length < 1) {
     return { status: 400, body: { error: "กรุณาระบุชื่อสินค้า" } };
-  }
-  if (!GROQ_API_KEY) {
-    return { status: 503, body: { error: "AI API is not configured yet" } };
   }
 
   const instructions = [
@@ -151,54 +202,21 @@ async function generatePost(input) {
     "ข้อความต้องพร้อมให้ผู้ขายคัดลอกไปแก้ไขก่อนโพสต์"
   ].join("\n");
 
-  let response;
   try {
-    response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + GROQ_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [
-          { role: "system", content: instructions },
-          { role: "user", content: inputText },
-        ],
-        max_tokens: 1100,
-        temperature: 0.7,
-      }),
-      signal: AbortSignal.timeout(40000),
-    });
+    const text = await callFreeAi([
+      { role: "system", content: instructions },
+      { role: "user", content: inputText },
+    ], 1100);
+    return { status: 200, body: { text, model: FREE_AI_MODEL, provider: "Pollinations Free API" } };
   } catch (error) {
-    console.error("Groq network error:", error.name || "network_error");
-    return { status: 502, body: { error: "เชื่อมต่อบริการ AI ไม่สำเร็จ กรุณาลองใหม่ภายหลัง" } };
-  }
-
-  if (!response.ok) {
-    console.error("Groq API returned status:", response.status);
-    if (response.status === 401 || response.status === 403) {
-      return { status: 502, body: { error: "GROQ_API_KEY ใช้ไม่ได้หรือไม่มีสิทธิ์ กรุณาตรวจสอบคีย์ใน Render" } };
+    if (error.statusCode === 429 || error.statusCode === 402) {
+      return { status: 429, body: { error: "บริการ AI ฟรีถึงขีดจำกัดหรือโควตาหมดชั่วคราว กรุณาลองใหม่ภายหลัง" } };
     }
-    if (response.status === 429) {
-      return { status: 429, body: { error: "ถึงขีดจำกัดโควตาฟรีชั่วคราวแล้ว กรุณารอสักครู่หรือตรวจสอบ Free Plan limits" } };
+    if (error.statusCode === 401 || error.statusCode === 403) {
+      return { status: 503, body: { error: "ผู้ให้บริการ AI ฟรีปฏิเสธคำขอในขณะนี้" } };
     }
-    return { status: 502, body: { error: "ผู้ให้บริการ AI ตอบกลับผิดพลาด กรุณาลองใหม่ภายหลัง" } };
+    return { status: 502, body: { error: error.message || "เชื่อมต่อบริการ AI ฟรีไม่สำเร็จ" } };
   }
-
-  let data;
-  try {
-    data = await response.json();
-  } catch {
-    return { status: 502, body: { error: "ได้รับคำตอบจาก AI ในรูปแบบที่ไม่ถูกต้อง" } };
-  }
-
-  const text = data?.choices?.[0]?.message?.content;
-  if (typeof text !== "string" || !text.trim()) {
-    console.error("Groq response contained no output text");
-    return { status: 502, body: { error: "AI ยังไม่ได้ส่งข้อความกลับมา กรุณาลองใหม่" } };
-  }
-  return { status: 200, body: { text: text.trim(), model: GROQ_MODEL } };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -208,9 +226,11 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url.pathname === "/api/health") {
     return reply(res, 200, {
       ok: true,
-      configured: Boolean(GROQ_API_KEY),
-      provider: "Groq",
-      model: GROQ_MODEL,
+      configured: true,
+      requiresKey: false,
+      provider: "Pollinations Free API",
+      providerReady: freeAiReady,
+      model: FREE_AI_MODEL,
     });
   }
   if (req.method !== "POST" || url.pathname !== "/api/generate") {
@@ -241,4 +261,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log("PostPang AI API listening on port", PORT);
+  // Test a tiny, fixed prompt at boot. No user content or API key is involved.
+  void selfTestFreeAi();
 });

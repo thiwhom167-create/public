@@ -50,7 +50,7 @@
 </div>
 <div class="results"><div class="results-head"><div><h3>แคปชั่นของคุณ</h3><p id="resultDesc">กรอกข้อมูลแล้วกดสร้างเพื่อเริ่มต้น</p></div><button class="btn small alt" id="copyAll" disabled>คัดลอกทั้งหมด</button></div>
 <div class="result-list" id="resultList"><div class="empty">ตัวอย่างของคุณจะแสดงตรงนี้</div></div>
-<p class="fine">หมายเหตุ: รุ่นทดลองนี้ใช้ชุดข้อความและกติกาในหน้าเว็บ ยังไม่ได้เรียกโมเดล AI ภายนอก โปรดตรวจสอบราคา โปรโมชัน และข้อเท็จจริงทุกครั้งก่อนเผยแพร่</p></div>
+<p class="fine" id="aiStatus">กำลังตรวจสอบสถานะเครื่องมือ AI...</p><p class="fine">โปรดตรวจสอบราคา โปรโมชัน และข้อเท็จจริงทุกครั้งก่อนเผยแพร่ เนื้อหา AI ควรผ่านการอ่านทวนก่อนนำไปใช้จริง</p></div>
 </div></div></section>
 <section class="section white" id="planner"><div class="wrap"><div class="section-head"><div class="kicker">7-DAY CONTENT PLANNER</div><h2>วางแผนคอนเทนต์ล่วงหน้า 7 วัน</h2><p>ต่อยอดจากสินค้าและประเภทธุรกิจที่เลือกในเครื่องมือฟรีด้านบน สร้างเป็นไอเดียโพสต์ทั้งสัปดาห์</p></div><div class="planner-wrap"><div class="panel"><h3>แผนคอนเทนต์สำหรับร้านคุณ</h3><p class="sub">ใช้ข้อมูลจากช่อง “สินค้า / บริการ” และ “จุดเด่น” ในเครื่องมือฟรีด้านบน</p><button class="btn full" id="generatePlan">สร้างแผน 7 วัน ✦</button><button class="btn alt full" id="copyPlan" style="margin-top:9px" disabled>คัดลอกแผนทั้งหมด</button><p class="fine">ระบบจะสร้างหัวข้อและประโยคเริ่มต้นเพื่อช่วยคิด ไม่ใช่ข้อมูลยอดขายจริงหรือคำรับรองผลลัพธ์ ตรวจแก้ให้ตรงกับธุรกิจทุกครั้ง</p></div><div class="planner-results" id="plannerResults"><div class="empty">กด “สร้างแผน 7 วัน” เพื่อดูหัวข้อโพสต์ที่นำไปปรับใช้ได้</div></div></div></div></section>
 <section class="section"><div class="wrap"><div class="section-head"><div class="kicker">WHY POSTPANG</div><h2>เริ่มเล็ก แต่มีระบบ</h2><p>เป้าหมายคือช่วยให้ร้านทำคอนเทนต์ต่อเนื่องขึ้น โดยไม่เพิ่มต้นทุนที่ไม่จำเป็น</p></div>
@@ -85,6 +85,8 @@ const PROMPTPAY_PHONE = "0918434942";
 const PROMPTPAY_NAME = "นายชัยอนันต์ ทับไธสง";
 const LINE_URL = ""; // ใส่ลิงก์ LINE Official Account หรือโปรไฟล์ที่ใช้รับงาน
 const CONTACT_EMAIL = ""; // หรือใส่อีเมลธุรกิจสำหรับรับคำขอ (เว้นว่างหากไม่ใช้)
+const API_BASE = "https://postpang-ai-api.onrender.com";
+let aiConfigured = false;
 const $ = id => document.getElementById(id);
 const shops = {cafe:"คาเฟ่",food:"ร้านอาหาร",beauty:"ร้านความงาม",fashion:"ร้านเสื้อผ้า",service:"ธุรกิจของคุณ"};
 const tones = {
@@ -101,16 +103,55 @@ const niche = {
  service:"บริการที่เริ่มจากการฟังสิ่งที่คุณต้องการ"
 };
 let latest=[];
-function build(){
- const type=$("type").value, product=$("product").value.trim()||"สินค้าของเรา", benefit=$("benefit").value.trim(), promo=$("promo").value.trim(), tone=tones[$("tone").value];
- const benefitLine=benefit?"จุดเด่นคือ"+benefit:niche[type];
- const caption1=tone.open.replace("{p}",product)+"\n\n"+product+" สำหรับคนที่กำลังมองหาสิ่งที่ใช่ "+benefitLine+"\n\n"+niche[type]+" "+tone.close+"\n\n#"+shops[type].replace(/\s/g,"")+" #"+product.replace(/\s/g,"");
- const caption2="ขอถามหน่อย วันนี้คุณกำลังมองหา "+product+" แบบไหนอยู่?\n\n"+benefitLine+"\n\n"+tone.question+" เราอยากอ่านคำตอบของคุณนะ";
- const caption3="มีข่าวดีมาบอกสำหรับคนที่สนใจ "+product+"\n\n"+(promo||benefit||niche[type])+"\n\n"+(promo?"ทักมาสอบถามรายละเอียดและเงื่อนไขได้เลย":tone.close)+"\n\nโปรดตรวจสอบรายละเอียดก่อนเผยแพร่";
- latest=[{label:"เล่าเรื่องสินค้า",text:caption1},{label:"ชวนคุยกับลูกค้า",text:caption2},{label:"แจ้งข้อเสนอ",text:caption3}];
- const list=$("resultList"); list.replaceChildren();
+function renderCaptionResults(){
+ const list=$("resultList");list.replaceChildren();
  latest.forEach((it,i)=>{const card=document.createElement("article");card.className="result";const head=document.createElement("div");head.className="result-title";const tag=document.createElement("span");tag.className="pill";tag.textContent=(i+1)+". "+it.label;const length=document.createElement("span");length.className="smallmuted";length.textContent=it.text.length+" ตัวอักษร";head.append(tag,length);const p=document.createElement("p");p.textContent=it.text;const b=document.createElement("button");b.className="copy";b.type="button";b.textContent="คัดลอกแคปชั่น";b.addEventListener("click",()=>copy(it.text,"คัดลอกแคปชั่นแล้ว"));card.append(head,p,b);list.append(card);});
- $("resultDesc").textContent="สร้าง 3 ไอเดียสำหรับ"+shops[type]+" — ตรวจและปรับให้ตรงกับร้านก่อนโพสต์";$("copyAll").disabled=false;
+ $("copyAll").disabled=false;
+}
+async function refreshAIHealth(){
+ try{
+  const r=await fetch(API_BASE+"/api/health",{cache:"no-store"});
+  const state=await r.json();
+  aiConfigured=Boolean(r.ok&&state.aiConfigured);
+  $("aiStatus").textContent=aiConfigured
+   ?"เชื่อมต่อ AI จริงแล้ว ผ่านเซิร์ฟเวอร์ที่เก็บคีย์ไว้อย่างปลอดภัย"
+   :"AI จริงยังไม่ได้เปิดใช้ จึงใช้เครื่องมือสร้างข้อความพื้นฐานในเว็บชั่วคราว";
+ }catch(e){
+  aiConfigured=false;
+  $("aiStatus").textContent="ขณะนี้ติดต่อเซิร์ฟเวอร์ AI ไม่ได้ เครื่องมือพื้นฐานยังใช้งานได้";
+ }
+}
+async function build(){
+ const type=$("type").value,product=$("product").value.trim()||"สินค้าของเรา",benefit=$("benefit").value.trim(),promo=$("promo").value.trim(),tone=tones[$("tone").value];
+ const benefitLine=benefit?"จุดเด่นคือ"+benefit:niche[type];
+ const caption1=tone.open.replace("{p}",product)+"\\n\\n"+product+" สำหรับคนที่กำลังมองหาสิ่งที่ใช่ "+benefitLine+"\\n\\n"+niche[type]+" "+tone.close+"\\n\\n#"+shops[type].replace(/\\s/g,"")+" #"+product.replace(/\\s/g,"");
+ const caption2="ขอถามหน่อย วันนี้คุณกำลังมองหา "+product+" แบบไหนอยู่?\\n\\n"+benefitLine+"\\n\\n"+tone.question+" เราอยากอ่านคำตอบของคุณนะ";
+ const caption3="มีข่าวดีมาบอกสำหรับคนที่สนใจ "+product+"\\n\\n"+(promo||benefit||niche[type])+"\\n\\n"+(promo?"ทักมาสอบถามรายละเอียดและเงื่อนไขได้เลย":tone.close)+"\\n\\nโปรดตรวจสอบรายละเอียดก่อนเผยแพร่";
+ latest=[{label:"เล่าเรื่องสินค้า",text:caption1},{label:"ชวนคุยกับลูกค้า",text:caption2},{label:"แจ้งข้อเสนอ",text:caption3}];
+ renderCaptionResults();
+ $("resultDesc").textContent="สร้าง 3 ไอเดียสำหรับ"+shops[type]+" — ตรวจและปรับให้ตรงกับร้านก่อนโพสต์";
+ if(!aiConfigured){
+  $("aiStatus").textContent="โหมดพื้นฐาน: API ยังไม่มีคีย์ AI ที่ใช้งานได้ จึงสร้างจากเทมเพลตในเว็บ";
+  return;
+ }
+ const button=$("generate");
+ const oldLabel=button.textContent;
+ button.disabled=true;button.textContent="AI กำลังคิด...";
+ try{
+  const response=await fetch(API_BASE+"/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:type,product,benefit,promo,tone:$("tone").value})});
+  const data=await response.json();
+  if(!response.ok||!Array.isArray(data.captions)||data.captions.length!==3)throw new Error(data.error||"AI request failed");
+  latest=data.captions;
+  renderCaptionResults();
+  $("resultDesc").textContent="สร้างแคปชั่นด้วย AI สำหรับ"+shops[type]+" — ตรวจข้อความก่อนเผยแพร่";
+  $("aiStatus").textContent="AI สร้างข้อความให้แล้ว โปรดตรวจข้อมูล ราคา และเงื่อนไขก่อนโพสต์";
+  toast("สร้างแคปชั่นด้วย AI สำเร็จ");
+ }catch(e){
+  $("aiStatus").textContent="AI ไม่พร้อมใช้ในขณะนี้ แสดงข้อความพื้นฐานแทน";
+  toast("ใช้แคปชั่นพื้นฐานแทนชั่วคราว");
+ }finally{
+  button.disabled=false;button.textContent=oldLabel;
+ }
 }
 let toastTimer;
 function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3500);}
@@ -211,6 +252,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")$("orderModal").hidd
 $("menuBtn").addEventListener("click",()=>{const n=$("links"),o=n.classList.toggle("open");$("menuBtn").setAttribute("aria-expanded",String(o));});
 document.querySelectorAll("#links a").forEach(a=>a.addEventListener("click",()=>{$("links").classList.remove("open");$("menuBtn").setAttribute("aria-expanded","false");}));
 $("year").textContent=new Date().getFullYear();
+refreshAIHealth();
 </script>
 </body>
 </html>

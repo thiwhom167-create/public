@@ -1,33 +1,24 @@
-# PostPang AI API (Thai) — free AI provider
+# PostPang AI — real local inference in the browser
 
-This API calls the Pollinations Free API Classic text endpoint, which does not require an API key according to the provider's currently published privacy information. Availability is not guaranteed: the legacy/free endpoint may rate-limit or reject requests, and free providers can change behavior.
+The public website uses the open Qwen2.5-0.5B-Instruct ONNX model through Transformers.js. The actual model runs inside the user's browser; prompts are not sent to an external inference API, and no OpenAI/Groq/Pollinations API key is required.
 
-## Deploy on Render
+## Browser model
 
-- Runtime: Node
-- Branch: main
+- Model: `onnx-community/Qwen2.5-0.5B-Instruct`
+- Library: Transformers.js via jsDelivr CDN
+- Runtime: WebGPU with Q4F16 quantization where supported; otherwise WebAssembly/CPU with Q4 quantization
+- Initial download: roughly 483 MB on WebGPU or 786 MB on CPU, plus tokenizer/runtime files. The browser caches model files where supported.
+- This is a small model. Quality and speed are lower than a large hosted model, especially on CPU-only devices.
+- Text generation runs on the device after the model is downloaded. Product details are not sent to a paid model API.
+- Internet access is needed to download the JavaScript library and model files for first use. After model caching, repeat use may use cached files depending on browser storage.
+
+## Render deployment
+
+The Node service only offers a basic health endpoint. Actual generation happens in `ai-worker.js` inside the browser.
 - Build command: `npm install`
 - Start command: `npm start`
-- Plan: Free for initial testing (cold starts can occur)
-- Region: Singapore
-- Environment variables:
-  - `SITE_ORIGIN`: optional; defaults to `https://postpang-ai-th.onrender.com`.
-- No `OPENAI_API_KEY`, `GROQ_API_KEY`, or provider API key is required by this version.
+- No API keys are required.
 
-## Endpoints
+## Limitations
 
-- `GET /api/health`: reports the provider self-test result from the last process start.
-- `POST /api/generate`: sends the user's product information to the free model and returns generated Thai captions.
-
-## Privacy and reliability
-
-- The server sends product details to the third-party Pollinations Free API Classic endpoint; don't enter confidential or personal customer information.
-- Requests ask the provider to mark outputs private (`private: true`), but this is not a guarantee of zero logging by the provider.
-- A small fixed self-test runs at server startup and its result is logged. It does not use user data or an API key.
-- If the free provider fails, the frontend clearly marks the fallback output as a template rather than claiming it was produced by a model.
-- Exact website-origin CORS check, request-size and field-length limits, 6 requests per IP per 10 minutes, model request timeout, and generic upstream errors are enabled.
-- The in-memory rate limit is an initial safeguard only. Since the site uses a no-key public provider, don't advertise it for high-volume production; providers may impose limits or become unavailable.
-
-## Local testing
-
-Run `npm start`. No provider key is needed.
+Older/low-memory phones may be unable to run the model or may close the tab. If the local model fails to load, the site reports the failure and provides a separately labeled template fallback; it must not claim that the fallback was written by an AI model. Do not enter confidential information when browsing any website; even though model inference is local, the site still downloads code/model artifacts from public CDNs.

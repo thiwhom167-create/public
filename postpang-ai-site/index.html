@@ -85,8 +85,6 @@ const PROMPTPAY_PHONE = "0918434942";
 const PROMPTPAY_NAME = "นายชัยอนันต์ ทับไธสง";
 const LINE_URL = ""; // ใส่ลิงก์ LINE Official Account หรือโปรไฟล์ที่ใช้รับงาน
 const CONTACT_EMAIL = ""; // หรือใส่อีเมลธุรกิจสำหรับรับคำขอ (เว้นว่างหากไม่ใช้)
-const API_BASE = "https://postpang-ai-api.onrender.com";
-let aiConfigured = false;
 const $ = id => document.getElementById(id);
 const shops = {cafe:"คาเฟ่",food:"ร้านอาหาร",beauty:"ร้านความงาม",fashion:"ร้านเสื้อผ้า",service:"ธุรกิจของคุณ"};
 const tones = {
@@ -108,19 +106,83 @@ function renderCaptionResults(){
  latest.forEach((it,i)=>{const card=document.createElement("article");card.className="result";const head=document.createElement("div");head.className="result-title";const tag=document.createElement("span");tag.className="pill";tag.textContent=(i+1)+". "+it.label;const length=document.createElement("span");length.className="smallmuted";length.textContent=it.text.length+" ตัวอักษร";head.append(tag,length);const p=document.createElement("p");p.textContent=it.text;const b=document.createElement("button");b.className="copy";b.type="button";b.textContent="คัดลอกแคปชั่น";b.addEventListener("click",()=>copy(it.text,"คัดลอกแคปชั่นแล้ว"));card.append(head,p,b);list.append(card);});
  $("copyAll").disabled=false;
 }
-async function refreshAIHealth(){
- try{
-  const r=await fetch(API_BASE+"/api/health",{cache:"no-store"});
-  const state=await r.json();
-  aiConfigured=Boolean(r.ok&&state.aiConfigured);
-  $("aiStatus").textContent=aiConfigured
-   ?"เชื่อมต่อ AI จริงแล้ว ผ่านเซิร์ฟเวอร์ที่เก็บคีย์ไว้อย่างปลอดภัย"
-   :"AI จริงยังไม่ได้เปิดใช้ จึงใช้เครื่องมือสร้างข้อความพื้นฐานในเว็บชั่วคราว";
- }catch(e){
-  aiConfigured=false;
-  $("aiStatus").textContent="ขณะนี้ติดต่อเซิร์ฟเวอร์ AI ไม่ได้ เครื่องมือพื้นฐานยังใช้งานได้";
+let localAIWorker = null;
+let activeAIJob = null;
+let aiJobCounter = 0;
+
+function refreshAIHealth(){
+ if(typeof Worker!=="function"){
+  $("aiStatus").textContent="เบราว์เซอร์นี้ไม่รองรับ AI ในเครื่อง จึงใช้เครื่องมือสร้างข้อความพื้นฐานแทน";
+  return;
  }
+ $("aiStatus").textContent="AI ทำงานบนอุปกรณ์ของคุณ ไม่ต้องใช้ API key · โมเดลจะดาวน์โหลดครั้งแรกประมาณ 483MB เมื่อมี WebGPU หรือ 786MB ในโหมด CPU";
 }
+
+function ensureAIWorker(){
+ if(localAIWorker)return localAIWorker;
+ if(typeof Worker!=="function")throw new Error("เบราว์เซอร์นี้ไม่รองรับ Web Worker");
+ localAIWorker=new Worker("./ai-worker.js",{type:"module"});
+ localAIWorker.onmessage=(event)=>{
+  const message=event.data||{};
+  if(!activeAIJob||message.id!==activeAIJob.id)return;
+  if(message.type==="progress"){
+   $("aiStatus").textContent="AI ในเครื่อง: "+(message.message||"กำลังทำงาน")+(message.detail?" · "+message.detail:"");
+   return;
+  }
+  if(message.type==="result"){
+   const job=activeAIJob;activeAIJob=null;
+   if(message.success)job.resolve(message);
+   else job.reject(new Error(message.error||"AI สร้างข้อความไม่สำเร็จ"));
+  }
+ };
+ localAIWorker.onerror=()=>{
+  const job=activeAIJob;activeAIJob=null;localAIWorker=null;
+  if(job)job.reject(new Error("โมเดล AI โหลดไม่สำเร็จ อุปกรณ์หรือเบราว์เซอร์อาจมีหน่วยความจำไม่พอ"));
+ };
+ return localAIWorker;
+}
+
+async function chooseLocalAIDevice(){
+ try{
+  if(navigator.gpu&&typeof navigator.gpu.requestAdapter==="function"){
+   const adapter=await navigator.gpu.requestAdapter();
+   if(adapter)return "webgpu";
+  }
+ }catch(e){}
+ return "wasm";
+}
+
+function requestLocalAI(data,device){
+ return new Promise((resolve,reject)=>{
+  let worker;
+  try{worker=ensureAIWorker();}catch(error){reject(error);return;}
+  const id=++aiJobCounter;
+  activeAIJob={id,resolve,reject};
+  try{worker.postMessage({type:"generate",id,data,device,model:"onnx-community/Qwen2.5-0.5B-Instruct"});}
+  catch(error){activeAIJob=null;reject(error);}
+ });
+}
+
+function parseLocalCaptions(raw){
+ const text=String(raw||"").replace(/\u0060{3}[a-z]*\s*/gi,"").trim();
+ const lines=text.split("\n");
+ const starts=[];
+ for(let i=0;i<lines.length;i++){
+  if(/^\s*(?:[1-3][.)、:：-]\s*|แบบที่\s*[1-3]\s*[:：.)-]?\s*)/.test(lines[i]))starts.push(i);
+ }
+ const labels=["เล่าเรื่องสินค้า","ชวนคุยกับลูกค้า","แจ้งข้อเสนอ"];
+ if(starts.length>=3){
+  return starts.slice(0,3).map((lineIndex,index)=>{
+   const first=lines[lineIndex].replace(/^\s*(?:[1-3][.)、:：-]\s*|แบบที่\s*[1-3]\s*[:：.)-]?\s*)/,"");
+   const body=[first,...lines.slice(lineIndex+1,starts[index+1]??lines.length)].join("\n").trim();
+   return {label:labels[index],text:body||text};
+  });
+ }
+ const blocks=text.split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
+ if(blocks.length>=3)return blocks.slice(0,3).map((part,index)=>({label:labels[index],text:part}));
+ return [{label:"ร่างแคปชั่นจาก AI",text:text}];
+}
+
 async function build(){
  const type=$("type").value,product=$("product").value.trim()||"สินค้าของเรา",benefit=$("benefit").value.trim(),promo=$("promo").value.trim(),tone=tones[$("tone").value];
  const benefitLine=benefit?"จุดเด่นคือ"+benefit:niche[type];

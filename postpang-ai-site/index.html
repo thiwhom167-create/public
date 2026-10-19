@@ -205,6 +205,20 @@ async function build(){
  button.disabled=true;
  button.textContent="กำลังเตรียม AI...";
  try{
+  try {
+   const remote=await fetch("https://postpang-ai-api.onrender.com/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:type,product,benefit,promo,tone:$("tone").value})});
+   const remoteData=await remote.json();
+   if(remote.ok&&remoteData.ok&&Array.isArray(remoteData.captions)&&remoteData.captions.length===3){
+    latest=remoteData.captions;
+    renderCaptionResults();
+    $("resultDesc").textContent="สร้างด้วย AI ผ่านเซิร์ฟเวอร์"+(remoteData.model?" ("+remoteData.model+")":"")+" — โปรดตรวจทานก่อนเผยแพร่";
+    $("aiStatus").textContent="เชื่อมต่อ AI ผ่านเซิร์ฟเวอร์สำเร็จ";
+    toast("สร้างแคปชั่นด้วย AI สำเร็จ");
+    return;
+   }
+  } catch(remoteError) {
+   $("aiStatus").textContent="AI ผ่านเซิร์ฟเวอร์ยังไม่พร้อม จึงลองใช้ AI ในอุปกรณ์แทน";
+  }
   const device=await chooseLocalAIDevice();
   $("aiStatus").textContent=device==="webgpu"
    ?"พบ WebGPU · กำลังเตรียม AI บนอุปกรณ์"

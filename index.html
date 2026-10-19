@@ -69,7 +69,7 @@ async function generate(){
   const response=await fetch(API_BASE+'/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d),signal:controller.signal});
   const json=await response.json().catch(()=>({}));
   if(!response.ok){
-   if(response.status===503) throw new Error('เซิร์ฟเวอร์ยังไม่ได้ตั้งค่า OPENAI_API_KEY กรุณาเปิด Render Dashboard ของบริการ postpang-ai-api แล้วเพิ่มคีย์ใน Environment');
+   if(response.status===503) throw new Error('เซิร์ฟเวอร์ยังไม่ได้ตั้งค่า GROQ_API_KEY กรุณาเปิด Render Dashboard ของบริการ postpang-ai-api แล้วเพิ่มคีย์ฟรีใน Environment');
    if(response.status===429) throw new Error('ใช้คำขอครบโควตาชั่วคราวแล้ว กรุณารอประมาณ 10 นาทีแล้วลองใหม่');
    if(response.status===403) throw new Error('คำขอนี้ไม่ได้มาจากเว็บไซต์ที่อนุญาต');
    throw new Error(json.error||'ระบบ AI ตอบกลับไม่สำเร็จ กรุณาลองใหม่ภายหลัง');
@@ -94,7 +94,7 @@ async function checkApiStatus(){
   const health=await response.json();
   if(health.configured){
    statusEl.textContent='AI API พร้อมตรวจใช้งาน';
-   document.getElementById('apiNote').textContent='เซิร์ฟเวอร์ตั้งค่า API Key แล้ว ระบบจะส่งคำขอไปยัง AI จริงเมื่อกดสร้างโพสต์';
+   document.getElementById('apiNote').textContent='เซิร์ฟเวอร์ตั้งค่า API Key แล้ว ระบบจะส่งคำขอไปยัง Groq AI จริงเมื่อกดสร้างโพสต์';
   }else{
    statusEl.textContent='ยังไม่ได้ตั้ง API Key';
    document.getElementById('apiNote').textContent='เซิร์ฟเวอร์ออนไลน์แล้ว แต่ยังไม่มี OPENAI_API_KEY จึงยังสร้างข้อความด้วย AI จริงไม่ได้';

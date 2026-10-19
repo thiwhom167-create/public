@@ -69,8 +69,8 @@
 <div class="steps"><article class="step"><div class="step-no">01</div><h3>สร้างตัวอย่าง</h3><p>เลือกประเภทร้านและสร้างแคปชั่นตัวอย่างให้เห็นแนวทาง</p></article><article class="step"><div class="step-no">02</div><h3>คุยขอบเขตงาน</h3><p>ยืนยันสินค้า โทนภาษา จำนวนโพสต์ รอบแก้ และวันที่ส่งมอบ</p></article><article class="step"><div class="step-no">03</div><h3>ส่งงานและวัดผล</h3><p>ตรวจทุกข้อเท็จจริง ส่งงานตามตกลง แล้วเก็บคำแนะนำเพื่อปรับบริการ</p></article></div></div></section>
 <section class="section white" id="contact"><div class="wrap"><div class="cta"><div><h2>พร้อมเริ่มทำคอนเทนต์ให้ร้านคุณ?</h2><p>เลือกแพ็กเกจ กรอกรายละเอียด แล้วสร้าง QR พร้อมเพย์สำหรับชำระรอบแรก</p><a class="contact-number" href="tel:+66918434942">โทรติดต่อ: 091-843-4942</a></div><button class="btn" id="contactBtn">สอบถามหรือสั่งบริการ ↗</button></div><p class="fine" style="text-align:center">การสั่งซื้อและยืนยันการชำระเงินยังทำด้วยตนเองผ่านการโทรหรือแชร์ข้อความ ระบบไม่ตรวจสลิปหรือยืนยันยอดเงินเข้าอัตโนมัติ</p></div></section>
 <section class="section" id="faq"><div class="wrap"><div class="section-head"><div class="kicker">FAQ</div><h2>คำถามที่พบบ่อย</h2></div><div class="faq">
-<details><summary>ตัวสร้างแคปชั่นเป็น AI จริงไหม?</summary><p>เครื่องมือฟรีในรุ่นนี้ใช้เทมเพลตและกติกา JavaScript ในเบราว์เซอร์ ไม่ได้เชื่อมต่อโมเดล AI ภายนอก เพื่อให้เริ่มทดลองได้โดยไม่มีค่า API รุ่นต่อไปสามารถเชื่อม API ผ่านเซิร์ฟเวอร์อย่างปลอดภัยเมื่อมีงบหรือโควตาฟรีที่เหมาะสม</p></details>
-<details><summary>ต้องใช้คีย์ API หรือสมัครสมาชิกไหม?</summary><p>ไม่ต้อง รุ่นทดลองทำงานในหน้าเว็บโดยตรง ไม่ควรใส่คีย์ลับไว้ใน HTML หรือ JavaScript ที่ผู้เข้าชมดูได้</p></details>
+<details><summary>ตัวสร้างแคปชั่นใช้ AI จริงไหม?</summary><p>ใช่ เมื่อโมเดล Qwen2.5-0.5B-Instruct โหลดสำเร็จ ระบบจะสร้างข้อความด้วยโมเดล AI ที่ทำงานบนอุปกรณ์ของผู้ใช้ หากโหลดไม่ได้ เว็บจะแจ้งชัดเจนและแสดงเทมเพลตสำรองแทน</p></details>
+<details><summary>ต้องใช้คีย์ API หรือสมัครสมาชิกไหม?</summary><p>ไม่ต้องใช้คีย์ API โมเดลจะดาวน์โหลดในครั้งแรกประมาณ 483MB เมื่อใช้งาน WebGPU หรือ 786MB ในโหมด CPU และต้องใช้อินเทอร์เน็ตเพื่อดาวน์โหลดไฟล์ หากอุปกรณ์มีหน่วยความจำไม่พอ AI ในเครื่องอาจทำงานไม่ได้ ในกรณีนั้นเว็บจะแสดงเทมเพลตสำรองแทน</p></details>
 <details><summary>จะมีรายได้ 10,000 บาทต่อเดือนแน่นอนไหม?</summary><p>ไม่มีการรับประกันรายได้ เป้าหมายนี้ต้องพิสูจน์ด้วยลูกค้าจริง คุณภาพของงาน ราคา และความสามารถในการหาลูกค้า</p></details>
 <details><summary>สั่งบริการอย่างไร?</summary><p>กดปุ่มสนใจแพ็กเกจ กรอกข้อมูลที่จำเป็น แล้วคัดลอกหรือแชร์ข้อความไปยังผู้ให้บริการ เว็บรุ่นนี้ยังไม่ส่งข้อมูลหรือบันทึกคำสั่งซื้ออัตโนมัติ เจ้าของเว็บต้องตั้งค่าช่องทางติดต่อจริงก่อนโปรโมตรับลูกค้า</p></details>
 <details><summary>แผน 7 วันคือแผนจาก AI หรือไม่?</summary><p>เป็นหัวข้อและข้อความเริ่มต้นจากชุดกติกาในหน้าเว็บ ไม่ใช่คำแนะนำจากโมเดล AI ที่เชื่อมต่อออนไลน์ ใช้เป็นโครงร่าง แล้วตรวจความถูกต้องและปรับให้เข้ากับแบรนด์ก่อนโพสต์</p></details>
@@ -184,35 +184,55 @@ function parseLocalCaptions(raw){
 }
 
 async function build(){
- const type=$("type").value,product=$("product").value.trim()||"สินค้าของเรา",benefit=$("benefit").value.trim(),promo=$("promo").value.trim(),tone=tones[$("tone").value];
+ const type=$("type").value;
+ const product=$("product").value.trim()||"สินค้าของเรา";
+ const benefit=$("benefit").value.trim();
+ const promo=$("promo").value.trim();
+ const tone=tones[$("tone").value];
  const benefitLine=benefit?"จุดเด่นคือ"+benefit:niche[type];
- const caption1=tone.open.replace("{p}",product)+"\\n\\n"+product+" สำหรับคนที่กำลังมองหาสิ่งที่ใช่ "+benefitLine+"\\n\\n"+niche[type]+" "+tone.close+"\\n\\n#"+shops[type].replace(/\\s/g,"")+" #"+product.replace(/\\s/g,"");
- const caption2="ขอถามหน่อย วันนี้คุณกำลังมองหา "+product+" แบบไหนอยู่?\\n\\n"+benefitLine+"\\n\\n"+tone.question+" เราอยากอ่านคำตอบของคุณนะ";
- const caption3="มีข่าวดีมาบอกสำหรับคนที่สนใจ "+product+"\\n\\n"+(promo||benefit||niche[type])+"\\n\\n"+(promo?"ทักมาสอบถามรายละเอียดและเงื่อนไขได้เลย":tone.close)+"\\n\\nโปรดตรวจสอบรายละเอียดก่อนเผยแพร่";
- latest=[{label:"เล่าเรื่องสินค้า",text:caption1},{label:"ชวนคุยกับลูกค้า",text:caption2},{label:"แจ้งข้อเสนอ",text:caption3}];
+ const caption1=tone.open.replace("{p}",product)+"\n\n"+product+" สำหรับคนที่กำลังมองหาสิ่งที่ใช่ "+benefitLine+"\n\n"+niche[type]+" "+tone.close+"\n\n#"+shops[type].replace(/\s/g,"")+" #"+product.replace(/\s/g,"");
+ const caption2="ขอถามหน่อย วันนี้คุณกำลังมองหา "+product+" แบบไหนอยู่?\n\n"+benefitLine+"\n\n"+tone.question+" เราอยากอ่านคำตอบของคุณนะ";
+ const caption3="มีข่าวดีมาบอกสำหรับคนที่สนใจ "+product+"\n\n"+(promo||benefit||niche[type])+"\n\n"+(promo?"ทักมาสอบถามรายละเอียดและเงื่อนไขได้เลย":tone.close)+"\n\nโปรดตรวจสอบรายละเอียดก่อนเผยแพร่";
+ latest=[
+  {label:"เล่าเรื่องสินค้า",text:caption1},
+  {label:"ชวนคุยกับลูกค้า",text:caption2},
+  {label:"แจ้งข้อเสนอ",text:caption3}
+ ];
  renderCaptionResults();
- $("resultDesc").textContent="สร้าง 3 ไอเดียสำหรับ"+shops[type]+" — ตรวจและปรับให้ตรงกับร้านก่อนโพสต์";
- if(!aiConfigured){
-  $("aiStatus").textContent="โหมดพื้นฐาน: API ยังไม่มีคีย์ AI ที่ใช้งานได้ จึงสร้างจากเทมเพลตในเว็บ";
-  return;
- }
+ $("resultDesc").textContent="กำลังเตรียมตัวสร้างแคปชั่นสำหรับ"+shops[type]+"...";
  const button=$("generate");
  const oldLabel=button.textContent;
- button.disabled=true;button.textContent="AI กำลังคิด...";
+ button.disabled=true;
+ button.textContent="กำลังเตรียม AI...";
  try{
-  const response=await fetch(API_BASE+"/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:type,product,benefit,promo,tone:$("tone").value})});
-  const data=await response.json();
-  if(!response.ok||!Array.isArray(data.captions)||data.captions.length!==3)throw new Error(data.error||"AI request failed");
-  latest=data.captions;
+  const device=await chooseLocalAIDevice();
+  $("aiStatus").textContent=device==="webgpu"
+   ?"พบ WebGPU · กำลังเตรียม AI บนอุปกรณ์"
+   :"ใช้โหมด CPU · โมเดลอาจช้าและใช้หน่วยความจำสูง";
+  const result=await requestLocalAI({
+   product:product,
+   price:"",
+   features:benefit,
+   promo:promo,
+   audience:shops[type],
+   tone:{"friendly":"เป็นกันเอง อบอุ่น","playful":"สนุก ขี้เล่น","premium":"เรียบหรู ดูพรีเมียม","direct":"ตรงประเด็น เน้นขาย"}[$("tone").value],
+   goal:"เพิ่มการมีส่วนร่วมและนำเสนอสินค้าอย่างซื่อสัตย์",
+   platform:"Facebook"
+  },device);
+  const generated=parseLocalCaptions(result.text).filter(item=>item.text&&item.text.trim());
+  if(!generated.length)throw new Error("โมเดลไม่ได้สร้างข้อความ");
+  latest=generated;
   renderCaptionResults();
-  $("resultDesc").textContent="สร้างแคปชั่นด้วย AI สำหรับ"+shops[type]+" — ตรวจข้อความก่อนเผยแพร่";
-  $("aiStatus").textContent="AI สร้างข้อความให้แล้ว โปรดตรวจข้อมูล ราคา และเงื่อนไขก่อนโพสต์";
-  toast("สร้างแคปชั่นด้วย AI สำเร็จ");
- }catch(e){
-  $("aiStatus").textContent="AI ไม่พร้อมใช้ในขณะนี้ แสดงข้อความพื้นฐานแทน";
-  toast("ใช้แคปชั่นพื้นฐานแทนชั่วคราว");
+  $("resultDesc").textContent="ข้อความจากโมเดล AI ในเครื่อง ("+result.model+") — โปรดตรวจทานก่อนเผยแพร่";
+  $("aiStatus").textContent="สร้างข้อความด้วย AI ในเครื่องเสร็จแล้ว รายละเอียดสินค้าจะไม่ถูกส่งไปยัง API AI ภายนอก";
+  toast("สร้างแคปชั่นด้วย AI ในเครื่องสำเร็จ");
+ }catch(error){
+  $("resultDesc").textContent="แสดงข้อความพื้นฐาน 3 แบบแทน เพราะ AI ในเครื่องไม่พร้อมใช้งาน";
+  $("aiStatus").textContent="AI ในเครื่องใช้ไม่ได้ในครั้งนี้ อาจโหลดโมเดลไม่สำเร็จหรือหน่วยความจำไม่พอ ข้อความที่แสดงเป็นเทมเพลตสำรอง";
+  toast("AI ในเครื่องไม่พร้อมใช้ จึงแสดงเทมเพลตสำรอง");
  }finally{
-  button.disabled=false;button.textContent=oldLabel;
+  button.disabled=false;
+  button.textContent=oldLabel;
  }
 }
 let toastTimer;

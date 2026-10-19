@@ -106,8 +106,15 @@ function renderCaptionResults(){
  latest.forEach((it,i)=>{const card=document.createElement("article");card.className="result";const head=document.createElement("div");head.className="result-title";const tag=document.createElement("span");tag.className="pill";tag.textContent=(i+1)+". "+it.label;const length=document.createElement("span");length.className="smallmuted";length.textContent=it.text.length+" ตัวอักษร";head.append(tag,length);const p=document.createElement("p");p.textContent=it.text;const b=document.createElement("button");b.className="copy";b.type="button";b.textContent="คัดลอกแคปชั่น";b.addEventListener("click",()=>copy(it.text,"คัดลอกแคปชั่นแล้ว"));card.append(head,p,b);list.append(card);});
  $("copyAll").disabled=false;
 }
+async function clearOldModelCaches(){
+ try{
+  if(!("caches" in window))return;
+  const names=await caches.keys();
+  await Promise.all(names.filter(name=>/transformers|huggingface|onnx/i.test(name)).map(name=>caches.delete(name)));
+ }catch(error){}
+}
 function refreshAIHealth(){
- $("aiStatus").textContent="โหมดออนไลน์: ลองใช้ AI ผ่านเซิร์ฟเวอร์ หากยังไม่พร้อมจะใช้ข้อความตัวอย่าง โดยไม่ดาวน์โหลดโมเดล AI ขนาดใหญ่ลงมือถือ";
+ $("aiStatus").textContent="โหมดออนไลน์: ใช้ AI ผ่านเซิร์ฟเวอร์ หากยังไม่พร้อมจะใช้ข้อความตัวอย่าง โดยไม่ดาวน์โหลดโมเดล AI ขนาดใหญ่ลงมือถือ";
 }
 async function build(){
  const type=$("type").value;
@@ -252,6 +259,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")$("orderModal").hidd
 $("menuBtn").addEventListener("click",()=>{const n=$("links"),o=n.classList.toggle("open");$("menuBtn").setAttribute("aria-expanded",String(o));});
 document.querySelectorAll("#links a").forEach(a=>a.addEventListener("click",()=>{$("links").classList.remove("open");$("menuBtn").setAttribute("aria-expanded","false");}));
 $("year").textContent=new Date().getFullYear();
+clearOldModelCaches();
 refreshAIHealth();
 </script>
 </body>

@@ -86,6 +86,25 @@ async function generate(){
 }
 async function clipboard(text){try{await navigator.clipboard.writeText(text);notice('คัดลอกข้อความแล้ว')}catch(e){output.focus();output.select();notice('เลือกข้อความไว้แล้ว กดคัดลอกได้เลย')}}
 function notice(t){toast.textContent=t;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2200)}
+async function checkApiStatus(){
+ statusEl.textContent='กำลังตรวจสอบ API…';
+ try{
+  const response=await fetch(API_BASE+'/api/health',{method:'GET',cache:'no-store'});
+  if(!response.ok)throw new Error('API unavailable');
+  const health=await response.json();
+  if(health.configured){
+   statusEl.textContent='AI API พร้อมตรวจใช้งาน';
+   document.getElementById('apiNote').textContent='เซิร์ฟเวอร์ตั้งค่า API Key แล้ว ระบบจะส่งคำขอไปยัง AI จริงเมื่อกดสร้างโพสต์';
+  }else{
+   statusEl.textContent='ยังไม่ได้ตั้ง API Key';
+   document.getElementById('apiNote').textContent='เซิร์ฟเวอร์ออนไลน์แล้ว แต่ยังไม่มี OPENAI_API_KEY จึงยังสร้างข้อความด้วย AI จริงไม่ได้';
+  }
+ }catch{
+  statusEl.textContent='เชื่อมต่อ API ไม่ได้';
+  document.getElementById('apiNote').textContent='ยังตรวจสอบเซิร์ฟเวอร์ไม่ได้ ลองโหลดหน้าใหม่อีกครั้ง';
+ }
+}
+checkApiStatus();
 form.addEventListener('submit',function(e){e.preventDefault();generate()});again.addEventListener('click',generate);copy.addEventListener('click',()=>clipboard(output.value));
 })();
 </script>

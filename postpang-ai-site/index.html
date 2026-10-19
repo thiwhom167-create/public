@@ -106,83 +106,9 @@ function renderCaptionResults(){
  latest.forEach((it,i)=>{const card=document.createElement("article");card.className="result";const head=document.createElement("div");head.className="result-title";const tag=document.createElement("span");tag.className="pill";tag.textContent=(i+1)+". "+it.label;const length=document.createElement("span");length.className="smallmuted";length.textContent=it.text.length+" ตัวอักษร";head.append(tag,length);const p=document.createElement("p");p.textContent=it.text;const b=document.createElement("button");b.className="copy";b.type="button";b.textContent="คัดลอกแคปชั่น";b.addEventListener("click",()=>copy(it.text,"คัดลอกแคปชั่นแล้ว"));card.append(head,p,b);list.append(card);});
  $("copyAll").disabled=false;
 }
-let localAIWorker = null;
-let activeAIJob = null;
-let aiJobCounter = 0;
-
 function refreshAIHealth(){
- if(typeof Worker!=="function"){
-  $("aiStatus").textContent="เบราว์เซอร์นี้ไม่รองรับ AI ในเครื่อง จึงใช้เครื่องมือสร้างข้อความพื้นฐานแทน";
-  return;
- }
- $("aiStatus").textContent="AI ทำงานบนอุปกรณ์ของคุณ ไม่ต้องใช้ API key · โมเดลจะดาวน์โหลดครั้งแรกประมาณ 483MB เมื่อมี WebGPU หรือ 786MB ในโหมด CPU";
+ $("aiStatus").textContent="โหมดออนไลน์: ลองใช้ AI ผ่านเซิร์ฟเวอร์ หากยังไม่พร้อมจะใช้ข้อความตัวอย่าง โดยไม่ดาวน์โหลดโมเดล AI ขนาดใหญ่ลงมือถือ";
 }
-
-function ensureAIWorker(){
- if(localAIWorker)return localAIWorker;
- if(typeof Worker!=="function")throw new Error("เบราว์เซอร์นี้ไม่รองรับ Web Worker");
- localAIWorker=new Worker("./ai-worker.js",{type:"module"});
- localAIWorker.onmessage=(event)=>{
-  const message=event.data||{};
-  if(!activeAIJob||message.id!==activeAIJob.id)return;
-  if(message.type==="progress"){
-   $("aiStatus").textContent="AI ในเครื่อง: "+(message.message||"กำลังทำงาน")+(message.detail?" · "+message.detail:"");
-   return;
-  }
-  if(message.type==="result"){
-   const job=activeAIJob;activeAIJob=null;
-   if(message.success)job.resolve(message);
-   else job.reject(new Error(message.error||"AI สร้างข้อความไม่สำเร็จ"));
-  }
- };
- localAIWorker.onerror=()=>{
-  const job=activeAIJob;activeAIJob=null;localAIWorker=null;
-  if(job)job.reject(new Error("โมเดล AI โหลดไม่สำเร็จ อุปกรณ์หรือเบราว์เซอร์อาจมีหน่วยความจำไม่พอ"));
- };
- return localAIWorker;
-}
-
-async function chooseLocalAIDevice(){
- try{
-  if(navigator.gpu&&typeof navigator.gpu.requestAdapter==="function"){
-   const adapter=await navigator.gpu.requestAdapter();
-   if(adapter)return "webgpu";
-  }
- }catch(e){}
- return "wasm";
-}
-
-function requestLocalAI(data,device){
- return new Promise((resolve,reject)=>{
-  let worker;
-  try{worker=ensureAIWorker();}catch(error){reject(error);return;}
-  const id=++aiJobCounter;
-  activeAIJob={id,resolve,reject};
-  try{worker.postMessage({type:"generate",id,data,device,model:"onnx-community/Qwen2.5-0.5B-Instruct"});}
-  catch(error){activeAIJob=null;reject(error);}
- });
-}
-
-function parseLocalCaptions(raw){
- const text=String(raw||"").replace(/\u0060{3}[a-z]*\s*/gi,"").trim();
- const lines=text.split("\n");
- const starts=[];
- for(let i=0;i<lines.length;i++){
-  if(/^\s*(?:[1-3][.)、:：-]\s*|แบบที่\s*[1-3]\s*[:：.)-]?\s*)/.test(lines[i]))starts.push(i);
- }
- const labels=["เล่าเรื่องสินค้า","ชวนคุยกับลูกค้า","แจ้งข้อเสนอ"];
- if(starts.length>=3){
-  return starts.slice(0,3).map((lineIndex,index)=>{
-   const first=lines[lineIndex].replace(/^\s*(?:[1-3][.)、:：-]\s*|แบบที่\s*[1-3]\s*[:：.)-]?\s*)/,"");
-   const body=[first,...lines.slice(lineIndex+1,starts[index+1]??lines.length)].join("\n").trim();
-   return {label:labels[index],text:body||text};
-  });
- }
- const blocks=text.split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
- if(blocks.length>=3)return blocks.slice(0,3).map((part,index)=>({label:labels[index],text:part}));
- return [{label:"ร่างแคปชั่นจาก AI",text:text}];
-}
-
 async function build(){
  const type=$("type").value;
  const product=$("product").value.trim()||"สินค้าของเรา";
@@ -190,60 +116,38 @@ async function build(){
  const promo=$("promo").value.trim();
  const tone=tones[$("tone").value];
  const benefitLine=benefit?"จุดเด่นคือ"+benefit:niche[type];
- const caption1=tone.open.replace("{p}",product)+"\n\n"+product+" สำหรับคนที่กำลังมองหาสิ่งที่ใช่ "+benefitLine+"\n\n"+niche[type]+" "+tone.close+"\n\n#"+shops[type].replace(/\s/g,"")+" #"+product.replace(/\s/g,"");
- const caption2="ขอถามหน่อย วันนี้คุณกำลังมองหา "+product+" แบบไหนอยู่?\n\n"+benefitLine+"\n\n"+tone.question+" เราอยากอ่านคำตอบของคุณนะ";
- const caption3="มีข่าวดีมาบอกสำหรับคนที่สนใจ "+product+"\n\n"+(promo||benefit||niche[type])+"\n\n"+(promo?"ทักมาสอบถามรายละเอียดและเงื่อนไขได้เลย":tone.close)+"\n\nโปรดตรวจสอบรายละเอียดก่อนเผยแพร่";
- latest=[
-  {label:"เล่าเรื่องสินค้า",text:caption1},
-  {label:"ชวนคุยกับลูกค้า",text:caption2},
-  {label:"แจ้งข้อเสนอ",text:caption3}
- ];
+ const caption1=tone.open.replace("{p}",product)+"\\n\\n"+product+" สำหรับคนที่กำลังมองหาสิ่งที่ใช่ "+benefitLine+"\\n\\n"+niche[type]+" "+tone.close+"\\n\\n#"+shops[type].replace(/\\s/g,"")+" #"+product.replace(/\\s/g,"");
+ const caption2="ขอถามหน่อย วันนี้คุณกำลังมองหา "+product+" แบบไหนอยู่?\\n\\n"+benefitLine+"\\n\\n"+tone.question+" เราอยากอ่านคำตอบของคุณนะ";
+ const caption3="มีข่าวดีมาบอกสำหรับคนที่สนใจ "+product+"\\n\\n"+(promo||benefit||niche[type])+"\\n\\n"+(promo?"ทักมาสอบถามรายละเอียดและเงื่อนไขได้เลย":tone.close)+"\\n\\nโปรดตรวจสอบรายละเอียดก่อนเผยแพร่";
+ latest=[{label:"เล่าเรื่องสินค้า",text:caption1},{label:"ชวนคุยกับลูกค้า",text:caption2},{label:"แจ้งข้อเสนอ",text:caption3}];
  renderCaptionResults();
- $("resultDesc").textContent="กำลังเตรียมตัวสร้างแคปชั่นสำหรับ"+shops[type]+"...";
+ $("resultDesc").textContent="กำลังเชื่อมต่อ AI ออนไลน์...";
  const button=$("generate");
  const oldLabel=button.textContent;
  button.disabled=true;
- button.textContent="กำลังเตรียม AI...";
+ button.textContent="กำลังสร้างแคปชั่น...";
  try{
-  try {
-   const remote=await fetch("https://postpang-ai-api.onrender.com/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:type,product,benefit,promo,tone:$("tone").value})});
-   const remoteData=await remote.json();
-   if(remote.ok&&remoteData.ok&&Array.isArray(remoteData.captions)&&remoteData.captions.length===3){
-    latest=remoteData.captions;
-    renderCaptionResults();
-    $("resultDesc").textContent="สร้างด้วย AI ผ่านเซิร์ฟเวอร์"+(remoteData.model?" ("+remoteData.model+")":"")+" — โปรดตรวจทานก่อนเผยแพร่";
-    $("aiStatus").textContent="เชื่อมต่อ AI ผ่านเซิร์ฟเวอร์สำเร็จ";
-    toast("สร้างแคปชั่นด้วย AI สำเร็จ");
-    return;
-   }
-  } catch(remoteError) {
-   $("aiStatus").textContent="AI ผ่านเซิร์ฟเวอร์ยังไม่พร้อม จึงลองใช้ AI ในอุปกรณ์แทน";
+  const response=await fetch("https://postpang-ai-api.onrender.com/api/generate",{
+   method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({category:type,product,benefit,promo,tone:$("tone").value}),
+   signal:AbortSignal.timeout(30000)
+  });
+  const data=await response.json().catch(()=>({}));
+  if(response.ok&&data.ok&&Array.isArray(data.captions)&&data.captions.length===3){
+   latest=data.captions;
+   renderCaptionResults();
+   $("resultDesc").textContent="สร้างด้วย AI ออนไลน์"+(data.model?" ("+data.model+")":"")+" — โปรดตรวจทานก่อนเผยแพร่";
+   $("aiStatus").textContent="AI ออนไลน์พร้อมใช้งาน · ไม่ต้องดาวน์โหลดโมเดลลงมือถือ";
+   toast("สร้างแคปชั่นด้วย AI สำเร็จ");
+  }else{
+   $("resultDesc").textContent="แสดงแคปชั่นตัวอย่าง เพราะ AI ออนไลน์ยังไม่พร้อม";
+   $("aiStatus").textContent="AI ออนไลน์ยังไม่พร้อมหรือยังไม่ได้ตั้งค่า API key ใช้ข้อความตัวอย่างแทน และไม่มีการดาวน์โหลดโมเดลลงมือถือ";
+   toast("AI ออนไลน์ยังไม่พร้อม จึงแสดงข้อความตัวอย่าง");
   }
-  const device=await chooseLocalAIDevice();
-  $("aiStatus").textContent=device==="webgpu"
-   ?"พบ WebGPU · กำลังเตรียม AI บนอุปกรณ์"
-   :"ใช้โหมด CPU · โมเดลอาจช้าและใช้หน่วยความจำสูง";
-  const result=await requestLocalAI({
-   product:product,
-   price:"",
-   features:benefit,
-   promo:promo,
-   audience:shops[type],
-   tone:{"friendly":"เป็นกันเอง อบอุ่น","playful":"สนุก ขี้เล่น","premium":"เรียบหรู ดูพรีเมียม","direct":"ตรงประเด็น เน้นขาย"}[$("tone").value],
-   goal:"เพิ่มการมีส่วนร่วมและนำเสนอสินค้าอย่างซื่อสัตย์",
-   platform:"Facebook"
-  },device);
-  const generated=parseLocalCaptions(result.text).filter(item=>item.text&&item.text.trim());
-  if(!generated.length)throw new Error("โมเดลไม่ได้สร้างข้อความ");
-  latest=generated;
-  renderCaptionResults();
-  $("resultDesc").textContent="ข้อความจากโมเดล AI ในเครื่อง ("+result.model+") — โปรดตรวจทานก่อนเผยแพร่";
-  $("aiStatus").textContent="สร้างข้อความด้วย AI ในเครื่องเสร็จแล้ว รายละเอียดสินค้าจะไม่ถูกส่งไปยัง API AI ภายนอก";
-  toast("สร้างแคปชั่นด้วย AI ในเครื่องสำเร็จ");
  }catch(error){
-  $("resultDesc").textContent="แสดงข้อความพื้นฐาน 3 แบบแทน เพราะ AI ในเครื่องไม่พร้อมใช้งาน";
-  $("aiStatus").textContent="AI ในเครื่องใช้ไม่ได้ในครั้งนี้ อาจโหลดโมเดลไม่สำเร็จหรือหน่วยความจำไม่พอ ข้อความที่แสดงเป็นเทมเพลตสำรอง";
-  toast("AI ในเครื่องไม่พร้อมใช้ จึงแสดงเทมเพลตสำรอง");
+  $("resultDesc").textContent="แสดงแคปชั่นตัวอย่าง เพราะเชื่อมต่อ AI ออนไลน์ไม่ได้";
+  $("aiStatus").textContent="เชื่อมต่อ AI ออนไลน์ไม่ได้ในขณะนี้ ใช้ข้อความตัวอย่างแทน โดยไม่ดาวน์โหลดโมเดลขนาดใหญ่ลงมือถือ";
+  toast("เชื่อมต่อ AI ไม่ได้ จึงแสดงข้อความตัวอย่าง");
  }finally{
   button.disabled=false;
   button.textContent=oldLabel;

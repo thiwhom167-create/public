@@ -67,7 +67,7 @@
 </div></section>
 <section class="section" id="how"><div class="wrap"><div class="section-head"><div class="kicker">HOW IT WORKS</div><h2>ทำอย่างไรให้เป็นรายได้</h2><p>เว็บเป็นหน้าร้าน แต่รายได้เริ่มเมื่อบริการตอบโจทย์ลูกค้าจริง</p></div>
 <div class="steps"><article class="step"><div class="step-no">01</div><h3>สร้างตัวอย่าง</h3><p>เลือกประเภทร้านและสร้างแคปชั่นตัวอย่างให้เห็นแนวทาง</p></article><article class="step"><div class="step-no">02</div><h3>คุยขอบเขตงาน</h3><p>ยืนยันสินค้า โทนภาษา จำนวนโพสต์ รอบแก้ และวันที่ส่งมอบ</p></article><article class="step"><div class="step-no">03</div><h3>ส่งงานและวัดผล</h3><p>ตรวจทุกข้อเท็จจริง ส่งงานตามตกลง แล้วเก็บคำแนะนำเพื่อปรับบริการ</p></article></div></div></section>
-<section class="section white" id="contact"><div class="wrap"><div class="cta"><div><h2>พร้อมเริ่มทำคอนเทนต์ให้ร้านคุณ?</h2><p>เลือกแพ็กเกจ กรอกรายละเอียด แล้วสร้าง QR พร้อมเพย์สำหรับชำระรอบแรก</p><a class="contact-number" href="tel:+66918434942">โทรติดต่อ: 091-843-4942</a></div><button class="btn" id="contactBtn">สอบถามหรือสั่งบริการ ↗</button></div><p class="fine" style="text-align:center">การสั่งซื้อและยืนยันการชำระเงินยังทำด้วยตนเองผ่านการโทรหรือแชร์ข้อความ ระบบไม่ตรวจสลิปหรือยืนยันยอดเงินเข้าอัตโนมัติ</p></div></section>
+<section class="section white" id="contact"><div class="wrap"><div class="cta"><div><h2>พร้อมเริ่มทำคอนเทนต์ให้ร้านคุณ?</h2><p>เลือกแพ็กเกจ กรอกรายละเอียด แล้วเตรียมข้อความคำขอได้ฟรี ยังไม่ต้องชำระก่อนยืนยันขอบเขตงาน</p></div><button class="btn" id="contactBtn">เตรียมคำขอสั่งบริการ ↗</button></div><p class="fine" style="text-align:center">เว็บไซต์รุ่นนี้ยังไม่ส่งคำขอถึงเจ้าของโดยอัตโนมัติ ช่องทางติดต่อและข้อมูลรับชำระเงินจะเปิดใช้เมื่อเจ้าของยืนยันข้อมูลจริงแล้วเท่านั้น กรุณารอการยืนยันก่อนโอนเงิน</p></div></section>
 <section class="section" id="faq"><div class="wrap"><div class="section-head"><div class="kicker">FAQ</div><h2>คำถามที่พบบ่อย</h2></div><div class="faq">
 <details><summary>ตัวสร้างแคปชั่นใช้ AI จริงไหม?</summary><p>ใช่ เมื่อโมเดล Qwen2.5-0.5B-Instruct โหลดสำเร็จ ระบบจะสร้างข้อความด้วยโมเดล AI ที่ทำงานบนอุปกรณ์ของผู้ใช้ หากโหลดไม่ได้ เว็บจะแจ้งชัดเจนและแสดงเทมเพลตสำรองแทน</p></details>
 <details><summary>ต้องใช้คีย์ API หรือสมัครสมาชิกไหม?</summary><p>ไม่ต้องใช้คีย์ API โมเดลจะดาวน์โหลดในครั้งแรกประมาณ 483MB เมื่อใช้งาน WebGPU หรือ 786MB ในโหมด CPU และต้องใช้อินเทอร์เน็ตเพื่อดาวน์โหลดไฟล์ หากอุปกรณ์มีหน่วยความจำไม่พอ AI ในเครื่องอาจทำงานไม่ได้ ในกรณีนั้นเว็บจะแสดงเทมเพลตสำรองแทน</p></details>
@@ -237,7 +237,7 @@ $("orderForm").addEventListener("submit",e=>{
   : selected;
  const msg="สวัสดีครับ/ค่ะ สนใจบริการโพสต์ปัง Studio\nแพ็กเกจ: "+selectedDescription+"\nชื่อร้าน/ธุรกิจ: "+$("orderShop").value.trim()+"\nสินค้า/บริการ: "+($("orderProduct").value.trim()||"-")+"\nช่องทางติดต่อกลับ: "+($("orderContact").value.trim()||"-")+"\nรายละเอียดเพิ่มเติม: "+($("orderNote").value.trim()||"-")+"\n\nรบกวนยืนยันขอบเขตงาน ราคา กำหนดส่ง และช่องทางชำระเงินที่ถูกต้องก่อนเริ่มงานครับ/ค่ะ";
  $("orderMessage").value=msg;
- const emailOk=CONTACT_EMAIL&&/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(CONTACT_EMAIL);
+ const emailOk=CONTACT_EMAIL&&CONTACT_EMAIL.includes("@")&&CONTACT_EMAIL.includes(".");
  $("sendEmail").href=emailOk?"mailto:"+CONTACT_EMAIL+"?subject="+encodeURIComponent("คำขอใช้บริการโพสต์ปัง Studio")+"&body="+encodeURIComponent(msg):"#";
  $("sendEmail").hidden=!emailOk;
  const direct=LINE_URL&&LINE_URL.startsWith("https://");

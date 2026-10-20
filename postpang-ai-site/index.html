@@ -128,7 +128,7 @@ async function build(){
  const caption3="มีข่าวดีมาบอกสำหรับคนที่สนใจ "+product+"\\n\\n"+(promo||benefit||niche[type])+"\\n\\n"+(promo?"ทักมาสอบถามรายละเอียดและเงื่อนไขได้เลย":tone.close)+"\\n\\nโปรดตรวจสอบรายละเอียดก่อนเผยแพร่";
  latest=[{label:"เล่าเรื่องสินค้า",text:caption1},{label:"ชวนคุยกับลูกค้า",text:caption2},{label:"แจ้งข้อเสนอ",text:caption3}];
  renderCaptionResults();
- $("resultDesc").textContent="กำลังเชื่อมต่อ AI ออนไลน์...";
+ $("resultDesc").textContent="กำลังเชื่อมต่อ AI ออนไลน์ — หากเซิร์ฟเวอร์ฟรีเพิ่งพัก อาจใช้เวลาประมาณ 1 นาที ข้อความตัวอย่างแสดงไว้แล้ว";
  const button=$("generate");
  const oldLabel=button.textContent;
  button.disabled=true;
@@ -137,7 +137,7 @@ async function build(){
   const response=await fetch("https://postpang-ai-api.onrender.com/api/generate",{
    method:"POST",headers:{"Content-Type":"application/json"},
    body:JSON.stringify({category:type,product,benefit,promo,tone:$("tone").value}),
-   signal:AbortSignal.timeout(30000)
+   signal:AbortSignal.timeout(90000)
   });
   const data=await response.json().catch(()=>({}));
   if(response.ok&&data.ok&&Array.isArray(data.captions)&&data.captions.length===3){
